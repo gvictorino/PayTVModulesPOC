@@ -1,0 +1,4 @@
+include ':shared-preferences'
+include ':version'
+include ':app'
+rootProject.name = "PayTVModulesPOC"
