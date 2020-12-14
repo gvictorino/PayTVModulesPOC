@@ -5,7 +5,11 @@ class VersionUseCase(
     private val identifier: String
 ) :
     VersionContract {
-    override fun getVersion(): String {
-        return "v${versionRepository.getVersion(identifier + "_" + VersionConstants.STORAGE_KEY)}"
+    override fun getVersion(): String? {
+        val version = versionRepository.getVersion(identifier + "_" + VersionConstants.STORAGE_KEY)
+        version?.let {
+            return "v${it}"
+        }
+        return null
     }
 }
