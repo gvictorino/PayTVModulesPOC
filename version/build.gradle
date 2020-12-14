@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
+    id 'com.jfrog.artifactory'
+    id 'maven-publish'
 }
 
 android {
@@ -11,7 +13,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -31,6 +33,80 @@ android {
         jvmTarget = '1.8'
     }
 }
+
+def libraryGroupId = 'com.victorino'
+def libraryArtifactId = 'version'
+def libraryVersion = android.defaultConfig.versionName
+def artifactoryUrl = 'https://victorino.jfrog.io/artifactory/'
+
+afterEvaluate {
+    publishing {
+        publications {
+            aar(MavenPublication) {
+                groupId libraryGroupId
+                version libraryVersion
+                artifactId libraryArtifactId
+
+                artifact("$buildDir/outputs/aar/${artifactId}-release.aar")
+
+                // Build a pom file which will be published, so the consumer does not
+                // need to declare all dependencies manually.
+                pom.withXml {
+                    // for dependencies and exclusions
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    def configurationNames = ["implementation", "api", "runtimeOnly"]
+                    configurationNames.each { confName ->
+                        configurations[confName].allDependencies.each {
+                            if (it.group != null && it.version != null) {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                dependencyNode.appendNode('artifactId', it.name)
+                                dependencyNode.appendNode('version', it.version)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+artifactory {
+    group = libraryGroupId
+    version = android.defaultConfig.versionName
+    contextUrl = artifactoryUrl
+
+    publish {
+        repository {
+            repoKey = 'android-libs'
+            username = "giovanna.victorino@gmail.com"
+            password = "AP9HDP9oY8A5zifa62mbwEbVLbc"
+            maven = true
+        }
+        defaults {
+            publishConfigs('archives', 'published')
+            properties = ['build.status': "$it.project.status".toString()]
+            publications('aar')
+            publishPom = true //Publish generated POM files to Artifactory (true by default)
+            publishIvy = false
+            publishArtifacts = true
+        }
+    }
+
+    resolve {
+        repository {
+            repoKey = 'android-libs'
+            username = "giovanna.victorino@gmail.com"
+            password = "AP9HDP9oY8A5zifa62mbwEbVLbc"
+            maven = true
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
 
 dependencies {
 
