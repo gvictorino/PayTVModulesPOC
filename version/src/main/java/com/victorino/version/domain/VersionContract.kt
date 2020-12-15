@@ -1,5 +1,11 @@
 package com.victorino.version.domain
 
-interface VersionContract {
-    fun getVersion() : String?
+interface VersionContracts {
+    interface GetVersion {
+        operator fun invoke(): String?
+    }
+
+    interface SetVersion {
+        operator fun invoke(version: String)
+    }
 }
